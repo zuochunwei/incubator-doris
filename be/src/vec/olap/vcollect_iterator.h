@@ -32,31 +32,53 @@ namespace vectorized {
 
 struct IteratorRowRef {
     const Block* block;
-    int16_t row_pos;
+    uint16_t row_pos;
     bool is_same;
 };
 
 class VCollectIterator {
 public:
-    // Hold reader point to get reader params
-    ~VCollectIterator();
+    ~VCollectIterator() { delete _inner_iter; }
 
+    // Hold reader point to get reader params
     void init(Reader* reader);
 
     OLAPStatus add_child(RowsetReaderSharedPtr rs_reader);
 
     void build_heap(std::vector<RowsetReaderSharedPtr>& rs_readers);
     // Get top row of the heap, nullptr if reach end.
-    OLAPStatus current_row(IteratorRowRef* ref) const;
+    OLAPStatus current_row(IteratorRowRef* ref) const {
+        if (LIKELY(_inner_iter)) {
+            *ref = *_inner_iter->current_row_ref();
+            if (ref->row_pos == -1) {
+                return OLAP_ERR_DATA_EOF;
+            } else {
+                return OLAP_SUCCESS;
+            }
+        }
+        return OLAP_ERR_DATA_ROW_BLOCK_ERROR;
+    }
 
     // Read nest order row in Block.
     // Returns
     //      OLAP_SUCCESS when read successfully.
     //      OLAP_ERR_DATA_EOF and set *row to nullptr when EOF is reached.
     //      Others when error happens
-    OLAPStatus next(IteratorRowRef* ref);
+    OLAPStatus next(IteratorRowRef* ref) {
+        if (LIKELY(_inner_iter)) {
+            return _inner_iter->next(ref);
+        } else {
+            return OLAP_ERR_DATA_EOF;
+        }
+    }
 
-    OLAPStatus next(Block* block);
+    OLAPStatus next(Block* block) {
+        if (LIKELY(_inner_iter)) {
+            return _inner_iter->next(block);
+        } else {
+            return OLAP_ERR_DATA_EOF;
+        }
+    }
 
     bool is_merge() const { return _merge; }
 
@@ -69,7 +91,7 @@ private:
     // then merged with other rowset readers.
     class LevelIterator {
     public:
-        LevelIterator(Reader* reader) : _schema(reader->tablet()->tablet_schema()) {};
+        LevelIterator(Reader* reader) : num_key_columns(reader->tablet()->tablet_schema().num_key_columns()) {}
 
         virtual OLAPStatus init() = 0;
 
@@ -83,15 +105,12 @@ private:
 
         void set_same(bool same) { _ref.is_same = same; }
 
-        bool is_same() { return _ref.is_same; }
+        bool is_same() const { return _ref.is_same; }
 
         virtual ~LevelIterator() = default;
 
-        const TabletSchema& tablet_schema() const { return _schema; };
-
-    protected:
-        const TabletSchema& _schema;
         IteratorRowRef _ref;
+        uint32_t num_key_columns = 0;
     };
 
     // Compare row cursors between multiple merge elements,
@@ -100,7 +119,7 @@ private:
     public:
         LevelIteratorComparator(int sequence = -1) : _sequence(sequence) {}
 
-        bool operator()(LevelIterator* lhs, LevelIterator* rhs);
+        bool operator()(LevelIterator* lhs, LevelIterator* rhs) const;
 
     private:
         int _sequence;
@@ -113,15 +132,21 @@ private:
     class Level0Iterator : public LevelIterator {
     public:
         Level0Iterator(RowsetReaderSharedPtr rs_reader, Reader* reader);
-        ~Level0Iterator() {}
 
         OLAPStatus init() override;
 
-        int64_t version() const override;
+        int64_t version() const override { return _version; }
 
-        OLAPStatus next(IteratorRowRef* ref) override;
+        OLAPStatus next(IteratorRowRef* ref) override {
+            _ref.row_pos++;
+            RETURN_NOT_OK(_refresh_current_row());
+            *ref = _ref;
+            return OLAP_SUCCESS;
+        }
 
-        OLAPStatus next(Block* block) override;
+        OLAPStatus next(Block* block) override {
+            return _rs_reader->next_block(block);
+        }
 
     private:
         OLAPStatus _refresh_current_row();
@@ -129,23 +154,49 @@ private:
         RowsetReaderSharedPtr _rs_reader;
         Reader* _reader = nullptr;
         Block _block;
+        int64_t _version = 0;
+        uint16_t _block_rows = 0;
     };
 
     // Iterate from LevelIterators (maybe Level0Iterators or Level1Iterator or mixed)
     class Level1Iterator : public LevelIterator {
     public:
-        Level1Iterator(const std::list<LevelIterator*>& children, Reader* reader, bool merge,
+        Level1Iterator(std::list<LevelIterator*>&& children, Reader* reader, bool merge,
                        bool skip_same);
+
+        ~Level1Iterator() { 
+            for (auto child : _children) 
+                delete child; 
+            delete _heap;
+        }
 
         OLAPStatus init() override;
 
-        int64_t version() const override;
+        int64_t version() const override {
+            if (_cur_child != nullptr) {
+                return _cur_child->version();
+            }
+            return -1;
+        }
 
-        OLAPStatus next(IteratorRowRef* ref) override;
+        OLAPStatus next(IteratorRowRef* ref) override {
+            if (UNLIKELY(_cur_child == nullptr)) {
+                _ref.row_pos = -1;
+                return OLAP_ERR_DATA_EOF;
+            }
+            if (_merge) {
+                return _merge_next(ref);
+            } else {
+                return _normal_next(ref);
+            }
+        }
 
-        OLAPStatus next(Block* block) override;
-
-        ~Level1Iterator();
+        OLAPStatus next(Block* block) override {
+            if (UNLIKELY(_cur_child == nullptr)) {
+                return OLAP_ERR_DATA_EOF;
+            }
+            return _normal_next(block);
+        }
 
     private:
         inline OLAPStatus _merge_next(IteratorRowRef* ref);
@@ -169,14 +220,14 @@ private:
         // *partially* ordered.
         bool _merge = true;
 
-        bool _skip_same;
+        bool _skip_same = false;
         // used when `_merge == true`
-        std::unique_ptr<MergeHeap> _heap;
+        MergeHeap* _heap = nullptr;
         // used when `_merge == false`
         int _child_idx = 0;
     };
 
-    std::unique_ptr<LevelIterator> _inner_iter;
+    LevelIterator* _inner_iter = nullptr;
 
     // Each LevelIterator corresponds to a rowset reader,
     // it will be cleared after '_inner_iter' has been initilized.
@@ -186,7 +237,7 @@ private:
     // Hold reader point to access read params, such as fetch conditions.
     Reader* _reader = nullptr;
 
-    bool _skip_same;
+    bool _skip_same = false;
 };
 
 } // namespace vectorized

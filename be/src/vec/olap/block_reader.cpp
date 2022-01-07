@@ -32,7 +32,7 @@ using std::vector;
 namespace doris::vectorized {
 
 BlockReader::BlockReader()
-        : _collect_iter(new VCollectIterator()), _next_row {nullptr, -1, false} {}
+        : _collect_iter(new VCollectIterator()), _next_row {nullptr, (uint16_t)-1, false} {}
 
 BlockReader::~BlockReader() {
     for (int i = 0; i < _agg_functions.size(); ++i) {
