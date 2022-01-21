@@ -31,7 +31,12 @@ namespace doris {
 PartRangeKey PartRangeKey::_s_pos_infinite(1);
 PartRangeKey PartRangeKey::_s_neg_infinite(-1);
 
-PartRange PartRange::_s_all_range(PartRangeKey::neg_infinite(), PartRangeKey::pos_infinite(), true, true);
+PartRange PartRange::_s_all_range = {
+        ._start_key = PartRangeKey::neg_infinite(),
+        ._end_key = PartRangeKey::pos_infinite(),
+        ._include_start_key = true,
+        ._include_end_key = true,
+};
 
 RollupSchema::RollupSchema() {}
 

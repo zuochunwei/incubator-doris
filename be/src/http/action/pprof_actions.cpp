@@ -225,9 +225,7 @@ void CmdlineAction::handle(HttpRequest* req) {
         return;
     }
     char buf[1024];
-    // Ignore unused return value
-    if (fscanf(fp, "%s ", buf))
-        ;
+    fscanf(fp, "%s ", buf);
     fclose(fp);
     std::string str = buf;
 

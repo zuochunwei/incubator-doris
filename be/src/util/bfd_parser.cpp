@@ -102,9 +102,7 @@ BfdParser* BfdParser::create() {
     }
 
     char prog_name[1024];
-    // Ignore unused return value
-    if (fscanf(file, "%s ", prog_name))
-        ;
+    fscanf(file, "%s ", prog_name);
     fclose(file);
     std::unique_ptr<BfdParser> parser(new BfdParser(prog_name));
     if (parser->parse()) {

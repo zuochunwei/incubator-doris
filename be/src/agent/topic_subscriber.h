@@ -19,7 +19,6 @@
 #define DORIS_BE_SRC_AGENT_TOPIC_SUBSCRIBER_H
 
 #include <map>
-#include <mutex>
 #include <shared_mutex>
 #include <thread>
 

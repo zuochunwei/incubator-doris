@@ -59,7 +59,7 @@ public:
     }
 
     ~PageHandle() {
-        if (_is_data_owner && _data.size > 0) {
+        if (_is_data_owner) {
             delete[] _data.data;
         }
     }

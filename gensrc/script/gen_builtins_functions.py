@@ -173,17 +173,16 @@ def generate_fe_registry_init(filename):
     java_registry_file.write(java_registry_epilogue)
     java_registry_file.close()
 
-if __name__ == "__main__":
 
-    try:
-        os.makedirs(FE_PATH)
-    except FileExistsError:
-        pass
+# Read the function metadata inputs
+for function in doris_builtins_functions.visible_functions:
+    add_function(function, True)
+for function in doris_builtins_functions.invisible_functions:
+    add_function(function, False)
 
-    # Read the function metadata inputs
-    for function in doris_builtins_functions.visible_functions:
-        add_function(function, True)
-    for function in doris_builtins_functions.invisible_functions:
-        add_function(function, False)
+if not os.path.exists(FE_PATH):
+    os.makedirs(FE_PATH)
 
-    generate_fe_registry_init(FE_PATH + "ScalarBuiltins.java")
+generate_fe_registry_init(FE_PATH + "ScalarBuiltins.java")
+
+
