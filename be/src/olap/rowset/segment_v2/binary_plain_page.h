@@ -185,7 +185,7 @@ public:
         return Status::OK();
     }
 
-    Status seek_to_position_in_page(size_t pos) override {
+    Status seek_to_position_in_page(size_t pos) override __attribute__ ((hot)) {
         DCHECK_LE(pos, _num_elems);
         _cur_idx = pos;
         return Status::OK();
@@ -230,7 +230,7 @@ public:
         return Status::OK();
     }
 
-    Status next_batch(size_t* n, vectorized::MutableColumnPtr &dst) override {
+    Status next_batch(size_t* n, vectorized::MutableColumnPtr &dst) override __attribute__ ((hot)) {
         DCHECK(_parsed);
         if (PREDICT_FALSE(*n == 0 || _cur_idx >= _num_elems)) {
             *n = 0;
@@ -252,12 +252,12 @@ public:
         return Status::OK();
     };
 
-    size_t count() const override {
+    size_t count() const override __attribute__ ((hot)) {
         DCHECK(_parsed);
         return _num_elems;
     }
 
-    size_t current_index() const override {
+    size_t current_index() const override __attribute__ ((hot)) {
         DCHECK(_parsed);
         return _cur_idx;
     }

@@ -170,11 +170,11 @@ public:
     /// All data will be inserted as single element
     virtual void insert_data(const char* pos, size_t length) = 0;
 
-    virtual void insert_many_fix_len_data(const char* pos, size_t num) {
+    virtual void insert_many_fix_len_data(const char* pos, size_t num) __attribute__ ((hot)) {
       LOG(FATAL) << "Method insert_many_fix_len_data is not supported for " << get_name();
     }
  
-    virtual void insert_many_dict_data(const int32_t* data_array, size_t start_index, const StringRef* dict, size_t num) {
+    virtual void insert_many_dict_data(const int32_t* data_array, size_t start_index, const StringRef* dict, size_t num) __attribute__ ((hot)) {
       LOG(FATAL) << "Method insert_many_dict_data is not supported for " << get_name();
     }
  

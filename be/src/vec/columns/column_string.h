@@ -147,7 +147,7 @@ public:
         }
     }
 
-    void insert_data(const char* pos, size_t length) override {
+    void insert_data(const char* pos, size_t length) override __attribute__((hot)) {
         const size_t old_size = chars.size();
         const size_t new_size = old_size + length + 1;
 
@@ -157,7 +157,7 @@ public:
         offsets.push_back(new_size);
     }
 
-    void insert_many_binary_data(char* data_array, uint32_t* len_array, uint32_t* start_offset_array, size_t num) override {
+    void insert_many_binary_data(char* data_array, uint32_t* len_array, uint32_t* start_offset_array, size_t num) override __attribute__((hot)) {
         for (size_t i = 0; i < num; i++) {
             uint32_t len = len_array[i];
             uint32_t start_offset = start_offset_array[i];
@@ -165,7 +165,7 @@ public:
         }
     };
  
-    void insert_many_dict_data(const int32_t* data_array, size_t start_index, const StringRef* dict, size_t num) override {
+    void insert_many_dict_data(const int32_t* data_array, size_t start_index, const StringRef* dict, size_t num) override __attribute__((hot)) {
         for (size_t end_index = start_index+num; start_index < end_index; ++start_index) {
             int32_t codeword = data_array[start_index];
             insert_data(dict[codeword].data, dict[codeword].size);
@@ -202,7 +202,7 @@ public:
 
     void insert_range_from(const IColumn& src, size_t start, size_t length) override;
 
-    void insert_indices_from(const IColumn& src, const int* indices_begin, const int* indices_end) override;
+    void insert_indices_from(const IColumn& src, const int* indices_begin, const int* indices_end) override __attribute__((hot));
 
     ColumnPtr filter(const Filter& filt, ssize_t result_size_hint) const override;
 

@@ -50,7 +50,7 @@ public:
     //      Others when error happens.
     virtual OLAPStatus next_block(RowBlock** block) = 0;
 
-    virtual OLAPStatus next_block(vectorized::Block* block) = 0;
+    virtual OLAPStatus next_block(vectorized::Block* block) __attribute__((hot)) = 0;
 
     virtual bool delete_flag() = 0;
 

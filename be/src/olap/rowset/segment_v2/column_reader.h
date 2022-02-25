@@ -100,12 +100,12 @@ public:
     Status new_bitmap_index_iterator(BitmapIndexIterator** iterator);
 
     // Seek to the first entry in the column.
-    Status seek_to_first(OrdinalPageIndexIterator* iter);
+    Status seek_to_first(OrdinalPageIndexIterator* iter) __attribute__ ((hot));
     Status seek_at_or_before(ordinal_t ordinal, OrdinalPageIndexIterator* iter);
 
     // read a page from file into a page handle
     Status read_page(const ColumnIteratorOptions& iter_opts, const PagePointer& pp,
-                     PageHandle* handle, Slice* page_body, PageFooterPB* footer);
+                     PageHandle* handle, Slice* page_body, PageFooterPB* footer) __attribute__ ((hot));
 
     bool is_nullable() const { return _meta.is_nullable(); }
 
@@ -204,20 +204,20 @@ public:
     }
 
     // Seek to the first entry in the column.
-    virtual Status seek_to_first() = 0;
+    virtual Status seek_to_first() __attribute__ ((hot)) = 0;
 
     // Seek to the given ordinal entry in the column.
     // Entry 0 is the first entry written to the column.
     // If provided seek point is past the end of the file,
     // then returns false.
-    virtual Status seek_to_ordinal(ordinal_t ord) = 0;
+    virtual Status seek_to_ordinal(ordinal_t ord) __attribute__ ((hot)) = 0;
 
     Status next_batch(size_t* n, ColumnBlockView* dst) {
         bool has_null;
         return next_batch(n, dst, &has_null);
     }
 
-    Status next_batch(size_t* n, vectorized::MutableColumnPtr& dst) {
+    Status next_batch(size_t* n, vectorized::MutableColumnPtr& dst) __attribute__ ((hot)) {
         bool has_null;
         return next_batch(n, dst, &has_null);
     }
@@ -227,7 +227,7 @@ public:
     // from MemPool
     virtual Status next_batch(size_t* n, ColumnBlockView* dst, bool* has_null) = 0;
 
-    virtual Status next_batch(size_t* n, vectorized::MutableColumnPtr& dst, bool* has_null) {
+    virtual Status next_batch(size_t* n, vectorized::MutableColumnPtr& dst, bool* has_null) __attribute__ ((hot)) {
         return Status::NotSupported("not implement");
     }
 
@@ -253,15 +253,15 @@ public:
     explicit FileColumnIterator(ColumnReader* reader);
     ~FileColumnIterator() override;
 
-    Status seek_to_first() override;
+    Status seek_to_first() override __attribute__ ((hot));
 
-    Status seek_to_ordinal(ordinal_t ord) override;
+    Status seek_to_ordinal(ordinal_t ord) override __attribute__ ((hot));
 
     Status seek_to_page_start();
 
     Status next_batch(size_t* n, ColumnBlockView* dst, bool* has_null) override;
 
-    Status next_batch(size_t* n, vectorized::MutableColumnPtr& dst, bool* has_null) override;
+    Status next_batch(size_t* n, vectorized::MutableColumnPtr& dst, bool* has_null) override __attribute__ ((hot));
 
     ordinal_t get_current_ordinal() const override { return _current_ordinal; }
 
@@ -317,7 +317,7 @@ public:
 
     Status next_batch(size_t* n, ColumnBlockView* dst, bool* has_null) override;
 
-    Status seek_to_first() override {
+    Status seek_to_first() override __attribute__ ((hot)) {
         RETURN_IF_ERROR(_length_iterator->seek_to_first());
         RETURN_IF_ERROR(_item_iterator->seek_to_first()); // lazy???
         if (_array_reader->is_nullable()) {
@@ -326,7 +326,7 @@ public:
         return Status::OK();
     }
 
-    Status seek_to_ordinal(ordinal_t ord) override {
+    Status seek_to_ordinal(ordinal_t ord) override __attribute__ ((hot)) {
         RETURN_IF_ERROR(_length_iterator->seek_to_ordinal(ord));
         if (_array_reader->is_nullable()) {
             RETURN_IF_ERROR(_null_iterator->seek_to_ordinal(ord));
@@ -389,24 +389,24 @@ public:
 
     Status init(const ColumnIteratorOptions& opts) override;
 
-    Status seek_to_first() override {
+    Status seek_to_first() override __attribute__ ((hot)) {
         _current_rowid = 0;
         return Status::OK();
     }
 
-    Status seek_to_ordinal(ordinal_t ord_idx) override {
+    Status seek_to_ordinal(ordinal_t ord_idx) override __attribute__ ((hot)) {
         _current_rowid = ord_idx;
         return Status::OK();
     }
 
-    Status next_batch(size_t* n, vectorized::MutableColumnPtr& dst) {
+    Status next_batch(size_t* n, vectorized::MutableColumnPtr& dst) __attribute__ ((hot)) {
         bool has_null;
         return next_batch(n, dst, &has_null);
     }
 
     Status next_batch(size_t* n, ColumnBlockView* dst, bool* has_null) override;
 
-    Status next_batch(size_t* n, vectorized::MutableColumnPtr& dst, bool* has_null) override;
+    Status next_batch(size_t* n, vectorized::MutableColumnPtr& dst, bool* has_null) override __attribute__ ((hot));
 
     ordinal_t get_current_ordinal() const override { return _current_rowid; }
 

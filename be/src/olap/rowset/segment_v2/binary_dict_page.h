@@ -103,11 +103,11 @@ public:
 
     Status init() override;
 
-    Status seek_to_position_in_page(size_t pos) override;
+    Status seek_to_position_in_page(size_t pos) override __attribute__ ((hot));
 
     Status next_batch(size_t* n, ColumnBlockView* dst) override;
 
-    Status next_batch(size_t* n, vectorized::MutableColumnPtr &dst) override;
+    Status next_batch(size_t* n, vectorized::MutableColumnPtr &dst) override __attribute__ ((hot));
 
     size_t count() const override { return _data_page_decoder->count(); }
 

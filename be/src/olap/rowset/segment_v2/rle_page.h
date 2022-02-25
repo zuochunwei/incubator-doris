@@ -183,7 +183,7 @@ public:
         return Status::OK();
     }
 
-    Status seek_to_position_in_page(size_t pos) override {
+    Status seek_to_position_in_page(size_t pos) override __attribute__ ((hot)) {
         DCHECK(_parsed) << "Must call init()";
         DCHECK_LE(pos, _num_elements)
                 << "Tried to seek to " << pos << " which is > number of elements (" << _num_elements
@@ -230,7 +230,7 @@ public:
         return Status::OK();
     }
 
-    Status next_batch(size_t* n, vectorized::MutableColumnPtr &dst) override {
+    Status next_batch(size_t* n, vectorized::MutableColumnPtr &dst) override __attribute__ ((hot)) {
         DCHECK(_parsed);
         if (PREDICT_FALSE(*n == 0 || _cur_index >= _num_elements)) {
             *n = 0;

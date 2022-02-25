@@ -278,7 +278,7 @@ public:
         return Status::OK();
     }
 
-    Status seek_to_position_in_page(size_t pos) override {
+    Status seek_to_position_in_page(size_t pos) override __attribute__ ((hot)) {
         DCHECK(_parsed) << "Must call init()";
         if (PREDICT_FALSE(_num_elements == 0)) {
             DCHECK_EQ(0, pos);
@@ -290,7 +290,7 @@ public:
         return Status::OK();
     }
 
-    Status seek_at_or_after_value(const void* value, bool* exact_match) override {
+    Status seek_at_or_after_value(const void* value, bool* exact_match) override __attribute__ ((hot)) {
         DCHECK(_parsed) << "Must call init() firstly";
 
         if (_num_elements == 0) {
@@ -328,7 +328,7 @@ public:
         return Status::OK();
     }
 
-    Status next_batch(size_t* n, ColumnBlockView* dst) override { return next_batch<true>(n, dst); }
+    Status next_batch(size_t* n, ColumnBlockView* dst) override __attribute__ ((hot)) { return next_batch<true>(n, dst); }
 
     template <bool forward_index>
     inline Status next_batch(size_t* n, ColumnBlockView* dst) {
@@ -348,7 +348,7 @@ public:
         return Status::OK();
     }
 
-    Status next_batch(size_t* n, vectorized::MutableColumnPtr& dst) override {
+    Status next_batch(size_t* n, vectorized::MutableColumnPtr& dst) override __attribute__ ((hot)) {
         DCHECK(_parsed);
         if (PREDICT_FALSE(*n == 0 || _cur_index >= _num_elements)) {
             *n = 0;
@@ -369,9 +369,9 @@ public:
         return next_batch<false>(n, dst);
     }
 
-    size_t count() const override { return _num_elements; }
+    size_t count() const override __attribute__ ((hot)) { return _num_elements; }
 
-    size_t current_index() const override { return _cur_index; }
+    size_t current_index() const override __attribute__ ((hot)) { return _cur_index; }
 
 private:
     void _copy_next_values(size_t n, void* data) {

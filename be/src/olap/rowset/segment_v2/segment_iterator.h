@@ -53,7 +53,7 @@ public:
 
     Status init(const StorageReadOptions& opts) override;
     Status next_batch(RowBlockV2* row_block) override;
-    Status next_batch(vectorized::Block* block) override;
+    Status next_batch(vectorized::Block* block) override __attribute__((hot));
 
     const Schema& schema() const override { return _schema; }
     bool is_lazy_materialization_read() const override { return _lazy_materialization_read; }

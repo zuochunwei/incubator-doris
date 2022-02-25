@@ -111,7 +111,7 @@ public:
         }
     }
 
-    void insert_many_fix_len_data(const char* data_ptr, size_t num) override {
+    void insert_many_fix_len_data(const char* data_ptr, size_t num) override __attribute__ ((hot)) {
         for (int i = 0; i < num; i++) {
             const char* cur_ptr = data_ptr + sizeof(decimal12_t) * i;
             int64_t int_value = *(int64_t*)(cur_ptr);

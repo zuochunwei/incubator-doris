@@ -60,7 +60,7 @@ public:
     //      Others when error happens
     OLAPStatus next(IteratorRowRef* ref);
 
-    OLAPStatus next(Block* block);
+    OLAPStatus next(Block* block) __attribute__((hot));
 
     bool is_merge() const { return _merge; }
 
@@ -83,7 +83,7 @@ private:
 
         virtual OLAPStatus next(IteratorRowRef* ref) = 0;
 
-        virtual OLAPStatus next(Block* block) = 0;
+        virtual OLAPStatus next(Block* block) __attribute__((hot)) = 0;
 
         void set_same(bool same) { _ref.is_same = same; }
 
@@ -130,7 +130,7 @@ private:
 
         OLAPStatus next(IteratorRowRef* ref) override;
 
-        OLAPStatus next(Block* block) override;
+        OLAPStatus next(Block* block) override __attribute__((hot));
 
     private:
         OLAPStatus _refresh_current_row();
@@ -152,7 +152,7 @@ private:
 
         OLAPStatus next(IteratorRowRef* ref) override;
 
-        OLAPStatus next(Block* block) override;
+        OLAPStatus next(Block* block) override __attribute__((hot));
 
         ~Level1Iterator();
 

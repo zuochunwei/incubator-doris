@@ -193,7 +193,7 @@ public:
         data.push_back_without_reserve(*val);
     }
 
-    void insert_data(const char* data_ptr, size_t length) override {
+    void insert_data(const char* data_ptr, size_t length) override __attribute__ ((hot)) {
         if constexpr (std::is_same_v<T, StringValue>) {
             insert_string_value(data_ptr, length);
         } else if constexpr (std::is_same_v<T, decimal12_t>) {
@@ -205,7 +205,7 @@ public:
         }
     }
 
-    void insert_many_fix_len_data(const char* data_ptr, size_t num) override {
+    void insert_many_fix_len_data(const char* data_ptr, size_t num) override __attribute__ ((hot)) {
         if constexpr (std::is_same_v<T, decimal12_t>) {
             insert_many_in_copy_way(data_ptr, num);
         } else if constexpr (std::is_same_v<T, doris::vectorized::Int128>) {
@@ -217,7 +217,7 @@ public:
         }
     }
 
-    void insert_many_dict_data(const int32_t* data_array, size_t start_index, const StringRef* dict, size_t num) override {
+    void insert_many_dict_data(const int32_t* data_array, size_t start_index, const StringRef* dict, size_t num) override __attribute__ ((hot)) {
         if constexpr (std::is_same_v<T, StringValue>) {
             for (size_t end_index = start_index+num; start_index < end_index; ++start_index) {
                 int32_t codeword = data_array[start_index];
