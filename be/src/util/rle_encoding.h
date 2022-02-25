@@ -96,7 +96,7 @@ public:
     RleDecoder() {}
 
     // Skip n values, and returns the number of non-zero entries skipped.
-    size_t Skip(size_t to_skip);
+    size_t Skip(size_t to_skip) __attribute__ ((hot));
 
     // Gets the next value.  Returns false if there are no more.
     bool Get(T* val);
@@ -108,7 +108,7 @@ public:
     // more data to be decoded. Will return a run of at most 'max_run'
     // values. If there are more values than this, the next call to
     // GetNextRun will return more from the same run.
-    size_t GetNextRun(T* val, size_t max_run);
+    size_t GetNextRun(T* val, size_t max_run) __attribute__ ((hot));
 
 private:
     bool ReadHeader();
