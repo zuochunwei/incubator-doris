@@ -278,30 +278,30 @@ public:
     bool is_nullable() { return _reader->is_nullable(); }
 
 private:
-    void _seek_to_pos_in_page(ParsedPage* page, ordinal_t offset_in_page);
+    void _seek_to_pos_in_page(ParsedPage* page, ordinal_t offset_in_page) __attribute__ ((hot));
     Status _load_next_page(bool* eos);
     Status _read_data_page(const OrdinalPageIndexIterator& iter);
 
 private:
-    ColumnReader* _reader;
-
-    // 1. The _page represents current page.
-    // 2. We define an operation is one seek and following read,
-    //    If new seek is issued, the _page will be reset.
-    ParsedPage _page;
-
-    // keep dict page decoder
-    std::unique_ptr<PageDecoder> _dict_decoder;
-
-    // keep dict page handle to avoid released
-    PageHandle _dict_page_handle;
-
     // page iterator used to get next page when current page is finished.
     // This value will be reset when a new seek is issued
     OrdinalPageIndexIterator _page_iter;
 
     // current value ordinal
     ordinal_t _current_ordinal = 0;
+
+    // 1. The _page represents current page.
+    // 2. We define an operation is one seek and following read,
+    //    If new seek is issued, the _page will be reset.
+    ParsedPage _page;
+
+    ColumnReader* _reader;
+
+    // keep dict page decoder
+    std::unique_ptr<PageDecoder> _dict_decoder;
+
+    // keep dict page handle to avoid released
+    PageHandle _dict_page_handle;
 
     std::unique_ptr<StringRef[]> _dict_word_info;
 };

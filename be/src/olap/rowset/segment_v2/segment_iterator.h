@@ -83,7 +83,7 @@ private:
     uint32_t segment_id() const { return _segment->id(); }
     uint32_t num_rows() const { return _segment->num_rows(); }
 
-    Status _seek_columns(const std::vector<ColumnId>& column_ids, rowid_t pos);
+    Status _seek_columns(const std::vector<ColumnId>& column_ids, rowid_t pos) __attribute__((hot));
     // read `nrows` of columns specified by `column_ids` into `block` at `row_offset`.
     Status _read_columns(const std::vector<ColumnId>& column_ids, RowBlockV2* block,
                          size_t row_offset, size_t nrows);

@@ -147,7 +147,7 @@ public:
         }
     }
 
-    void insert_data(const char* pos, size_t length) override __attribute__((hot)) {
+    inline void insert_data(const char* pos, size_t length) override __attribute__((hot)) {
         const size_t old_size = chars.size();
         const size_t new_size = old_size + length + 1;
 

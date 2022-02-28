@@ -221,7 +221,12 @@ public:
         if constexpr (std::is_same_v<T, StringValue>) {
             for (size_t end_index = start_index+num; start_index < end_index; ++start_index) {
                 int32_t codeword = data_array[start_index];
-                insert_string_value(dict[codeword].data, dict[codeword].size);
+                //insert_string_value(dict[codeword].data, dict[codeword].size);
+                StringValue* end = (StringValue*)data.get_end_ptr();
+                *end = *(StringValue*)(&dict[codeword]);
+                //end->ptr = dict[codeword].data
+                //end->len = dict[codeword].size;
+                data.set_end_ptr(end+1);
             }
         }
     }

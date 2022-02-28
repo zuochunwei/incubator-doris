@@ -58,6 +58,7 @@ struct ParsedPage {
 
         page->first_ordinal = footer.first_ordinal();
         page->num_rows = footer.num_values();
+        page->end_ordinal = page->first_ordinal + page->num_rows;
 
         page->page_pointer = page_pointer;
         page->page_index = page_index;
@@ -72,6 +73,10 @@ struct ParsedPage {
         data_decoder = nullptr;
     }
 
+    // ordinal of the first value in this page
+    ordinal_t first_ordinal = 0;
+    ordinal_t end_ordinal = 0;
+
     PageHandle page_handle;
 
     bool has_null;
@@ -79,8 +84,6 @@ struct ParsedPage {
     RleDecoder<bool> null_decoder;
     PageDecoder* data_decoder = nullptr;
 
-    // ordinal of the first value in this page
-    ordinal_t first_ordinal = 0;
     // number of rows including nulls and not-nulls
     ordinal_t num_rows = 0;
     // just for array type
@@ -94,7 +97,7 @@ struct ParsedPage {
     ordinal_t offset_in_page = 0;
 
     bool contains(ordinal_t ord) {
-        return ord >= first_ordinal && ord < (first_ordinal + num_rows);
+        return ord >= first_ordinal && ord < end_ordinal;
     }
 
     operator bool() const { return data_decoder != nullptr; }
