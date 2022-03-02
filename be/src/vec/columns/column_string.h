@@ -17,7 +17,7 @@
 // This file is copied from
 // https://github.com/ClickHouse/ClickHouse/blob/master/src/Columns/ColumnString.h
 // and modified by Doris
-
+//
 #pragma once
 
 #include <cassert>
@@ -32,7 +32,11 @@
 #include "vec/common/sip_hash.h"
 #include "vec/core/field.h"
 
+#include "../../util/mem_util.hpp"
+
 class Collator;
+extern std::atomic<uint64_t> my_atomic_u64;
+
 
 namespace doris::vectorized {
 
@@ -165,11 +169,44 @@ public:
         }
     };
  
-    void insert_many_dict_data(const int32_t* data_array, size_t start_index, const StringRef* dict, size_t num) override {
-        for (size_t end_index = start_index+num; start_index < end_index; ++start_index) {
-            int32_t codeword = data_array[start_index];
-            insert_data(dict[codeword].data, dict[codeword].size);
+    void insert_many_dict_data(const int32_t* __restrict data_array, size_t start_index, const StringRef* __restrict  dict, size_t num) override {
+        struct timespec ts, ts_end;
+        clock_gettime(CLOCK_MONOTONIC, &ts);
+
+        size_t index = start_index;
+        size_t end = start_index + num;
+
+        // copy offsets
+        size_t old_size = offsets.size();
+        offsets.resize(old_size + num);
+
+        size_t chars_old_size = chars.size();
+        size_t chars_new_size = chars_old_size;
+        for (; index < end; ++index) {
+            int32_t codeword = data_array[index];
+            chars_new_size += (dict[codeword].size + 1);
+            offsets[old_size++] = chars_new_size;
         }
+
+        // copy chars
+        chars.resize(chars_new_size);
+        unsigned char* __restrict c_data = chars.data();
+
+        index = start_index;
+        for (; index < end; ++index) {
+            int32_t codeword = data_array[start_index];
+            const StringRef& word = dict[codeword]; 
+            if (word.size) {
+                //memcpy(c_data + chars_old_size, word.data, word.size);
+                memory_copy(c_data + chars_old_size, word.data, word.size);
+                chars_old_size += word.size;
+            }
+            c_data[chars_old_size++] = 0;
+        }
+
+        clock_gettime(CLOCK_MONOTONIC, &ts_end);
+        uint64_t value = (ts_end.tv_sec - ts.tv_sec) * 1000L * 1000L * 1000L + (ts_end.tv_nsec - ts.tv_nsec);
+        my_atomic_u64 += value;
     }
 
     /// Like getData, but inserting data should be zero-ending (i.e. length is 1 byte greater than real string size).

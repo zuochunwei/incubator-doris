@@ -27,6 +27,8 @@
 #include "vec/columns/column_vector.h"
 #include "vec/core/types.h"
 
+extern std::atomic<uint64_t> my_atomic_u64_predicate;
+
 namespace doris::vectorized {
 
 /**
@@ -217,12 +219,24 @@ public:
         }
     }
 
-    void insert_many_dict_data(const int32_t* data_array, size_t start_index, const StringRef* dict, size_t num) override {
+    void insert_many_dict_data(const int32_t* __restrict data_array, size_t start_index, const StringRef* __restrict dict, size_t num) override {
         if constexpr (std::is_same_v<T, StringValue>) {
+            struct timespec ts, ts_end;
+            clock_gettime(CLOCK_MONOTONIC, &ts);
+            size_t size = data.size();
+            data.resize(size + num);
+            StringValue* sv = &data[size];
             for (size_t end_index = start_index+num; start_index < end_index; ++start_index) {
                 int32_t codeword = data_array[start_index];
-                insert_string_value(dict[codeword].data, dict[codeword].size);
+                //insert_string_value(dict[codeword].data, dict[codeword].size);
+                sv->ptr = (char*)dict[codeword].data;
+                sv->len = dict[codeword].size;
+                ++sv;
             }
+
+            clock_gettime(CLOCK_MONOTONIC, &ts_end);
+            uint64_t value = (ts_end.tv_sec - ts.tv_sec) * 1000L * 1000L * 1000L + (ts_end.tv_nsec - ts.tv_nsec);
+            my_atomic_u64_predicate += value;
         }
     }
 

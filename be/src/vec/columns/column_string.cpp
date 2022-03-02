@@ -18,6 +18,8 @@
 // https://github.com/ClickHouse/ClickHouse/blob/master/src/Columns/ColumnString.cpp
 // and modified by Doris
 
+
+#include <atomic>
 #include "vec/columns/column_string.h"
 
 #include "vec/columns/collator.h"
@@ -26,6 +28,9 @@
 #include "vec/common/assert_cast.h"
 #include "vec/common/memcmp_small.h"
 #include "vec/common/unaligned.h"
+
+std::atomic<uint64_t> my_atomic_u64;
+std::atomic<uint64_t> my_atomic_u64_predicate;
 
 namespace doris::vectorized {
 

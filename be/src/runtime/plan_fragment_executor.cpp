@@ -46,6 +46,9 @@
 #include "vec/exec/vexchange_node.h"
 #include "vec/runtime/vdata_stream_mgr.h"
 
+extern std::atomic<std::uint64_t> my_atomic_u64;
+extern std::atomic<std::uint64_t> my_atomic_u64_predicate;
+
 namespace doris {
 
 PlanFragmentExecutor::PlanFragmentExecutor(ExecEnv* exec_env,
@@ -320,6 +323,8 @@ Status PlanFragmentExecutor::open_vectorized_internal() {
 
     stop_report_thread();
     send_report(true);
+
+    LOG(INFO) << "zuochunwei id:" << _runtime_state->fragment_instance_id() << " time:" << my_atomic_u64 << " predicate:" << my_atomic_u64_predicate;
 
     return Status::OK();
 }
